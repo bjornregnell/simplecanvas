@@ -1,0 +1,16 @@
+tmp
+**/old
+**/bin
+
+# Java / Scala
+**/*.class
+.ensime
+.ensime_cache/
+.classpath
+
+**/*.cache-main  # Eclipse
+**/.metadata     # Eclipse
+**/target        # sbt
+*.swp            # vim
+*~               # emacs
+.idea            # IntelliJ

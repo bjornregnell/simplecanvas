@@ -11,6 +11,7 @@ tmp
 **/*.cache-main  # Eclipse
 **/.metadata     # Eclipse
 **/target        # sbt
+target
 *.swp            # vim
 *~               # emacs
 .idea            # IntelliJ

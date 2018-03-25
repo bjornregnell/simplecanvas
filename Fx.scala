@@ -1,35 +1,42 @@
 /** A wrapper with utils for simpler access to javafx */
 object Fx {
-  @volatile private var _theApp: SimpleFxApp = _
-  def theApp: SimpleFxApp = _theApp
+  @volatile private var _theApp: MinimalFxApp = _
+  def theApp: FxApp = _theApp
 
   def runInNewThread(block: => Unit): Unit =
     new Thread( new Runnable() { override def run(): Unit = block }).start()
 
-  @volatile private var doInit: () => Unit = _
+  @volatile private var delayedAppInit: javafx.stage.Stage => Unit = _
   @volatile private var _isStarted = false
   def isStarted = _isStarted
 
-  def start(initBlock: => Unit = {}): Unit = {
+  private def launchApp(initPrimaryStage: javafx.stage.Stage => Unit): Unit = {
     runInNewThread {
-      doInit = () => { initBlock; _isStarted = true }
-      javafx.application.Application.launch(classOf[SimpleFxApp])
+      delayedAppInit = s => { initPrimaryStage(s); _isStarted = true }
+      javafx.application.Application.launch(classOf[MinimalFxApp])
     }
+    // Below ugly polling solves error: "Toolkit not initialized on line 28"
     while (!isStarted) { Thread.sleep(100) }
-  }
+ }
 
-  def apply(block: => Unit): Unit = javafx.application.Platform.runLater {
+  def runInFxThread(block: => Unit): Unit = javafx.application.Platform.runLater {
     new Runnable() { override def run(): Unit = block }
   }
 
-  class SimpleFxApp extends javafx.application.Application {
+  def newWindow(init: javafx.stage.Stage => Unit): Unit =
+    if (!isStarted) launchApp(init)
+    else runInFxThread{ init(new javafx.stage.Stage) }
+
+  trait FxApp { def primaryStage: javafx.stage.Stage }
+
+  private class MinimalFxApp extends javafx.application.Application with FxApp {
     private var _primaryStage: javafx.stage.Stage = null
     def primaryStage: javafx.stage.Stage = _primaryStage
 
-    override def start(primaryStage: javafx.stage.Stage) {
+    override def start(primaryStage: javafx.stage.Stage): Unit = {
       _primaryStage = primaryStage
       _theApp = this
-      doInit()
+      delayedAppInit(primaryStage)
     }
   }
 

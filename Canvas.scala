@@ -1,35 +1,34 @@
-object Canvas {
+class CanvasWindow(title: String = "Canvas", size: (Int, Int) = (800, 640)) {
+
   type Callback = () => Unit
   var onOpen: Callback = () => println("Open menu selected")
   var onSave: Callback = () => println("Save menu selected")
   var onQuit: Callback = () => Fx.stop
   var onFullScreen: Callback = () => println(s"isFullScreen == $isFullScreen")
 
-  def isFullScreen = Fx.isStarted && Fx.theApp.primaryStage.isFullScreen
+  private var _isInitialized = false
+  private var _stage: javafx.stage.Stage = _
+
+  def withStage(callback: javafx.stage.Stage => Unit): Unit =
+    Fx.runInFxThread { callback(_stage) }
+
+  def isFullScreen = _isInitialized && _stage.isFullScreen
 
   private var _canvas: javafx.scene.canvas.Canvas = _
-  def graphics: javafx.scene.canvas.GraphicsContext = _canvas.getGraphicsContext2D
 
-  private def initIfNotStarted(): Unit = if (!Fx.isStarted) init()
+  def withGraphics(callback: javafx.scene.canvas.GraphicsContext => Unit) =
+    Fx.runInFxThread{ callback(_canvas.getGraphicsContext2D) }
 
-  var pos = (0,0)
-
-  def x = pos._1
-  def x_=(newX: Int): Unit = { pos = (newX, y) }
-
-  def y = pos._2
-  def y_=(newY: Int): Unit = { pos = (x, newY) }
-
-  def moveTo(newPos:(Int, Int)): Unit = { pos = newPos }
-
-  def lineTo(newPos:(Int, Int)): Unit = {
-    initIfNotStarted()
-    graphics.strokeLine(x, y, newPos._1, newPos._2)
-    pos = newPos
+  def line(p1: (Double, Double), p2: (Double, Double)): Unit =  withGraphics { gc =>
+    gc.strokeLine(p1._1, p1._2, p2._1, p2._2)
   }
 
-  def init(title: String = "CanvasApp", size: (Int, Int) = (800, 640)): Unit =
-    if (!Fx.isStarted) Fx.start {
+  def rect(p:(Int, Int), dxy: (Int, Int)): Unit = withGraphics { gc =>
+    gc.fillRect(p._1, p._2, dxy._1, dxy._2)
+  }
+
+  Fx.newWindow { stage =>
+      stage.setTitle(title)
       val root = new javafx.scene.layout.VBox
       _canvas = Fx.canvas(size)
       root.getChildren.addAll(
@@ -41,16 +40,19 @@ object Canvas {
           ),
           Fx.menu("View",
             Fx.menuItem("Toggle Full Screen", "F11", () => {
-              Fx.theApp.primaryStage.setFullScreen(!isFullScreen)
+              stage.setFullScreen(!isFullScreen)
               onFullScreen()
             })
           )
         ),
         _canvas
       )
-      Fx.theApp.primaryStage.setScene(new javafx.scene.Scene(root, size._1, size._2))
-      Fx.theApp.primaryStage.setResizable(false)
-      Fx.theApp.primaryStage.setTitle(title)
-      Fx.theApp.primaryStage.show
-    } else throw new Exception("Canvas.init must not be called more than once")
+      stage.setScene(new javafx.scene.Scene(root, size._1, size._2))
+      stage.setResizable(false)
+      stage.show
+      _stage = stage
+      _isInitialized = true
+  }
 }
+
+object Canvas extends CanvasWindow

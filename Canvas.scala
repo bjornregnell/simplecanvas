@@ -1,4 +1,4 @@
-class CanvasWindow(title: String = "Canvas", size: (Int, Int) = (800, 640)) {
+class CanvasWindow(initTitle: String = "Canvas", size: (Int, Int) = (800, 640)) {
 
   type Callback = () => Unit
   var onOpen: Callback = () => println("Open menu selected")
@@ -27,8 +27,10 @@ class CanvasWindow(title: String = "Canvas", size: (Int, Int) = (800, 640)) {
     gc.fillRect(p._1, p._2, dxy._1, dxy._2)
   }
 
+  def title(newTitle: String): Unit = withStage { _.setTitle(newTitle) }
+
   Fx.newWindow { stage =>
-      stage.setTitle(title)
+      stage.setTitle(initTitle)
       val root = new javafx.scene.layout.VBox
       _canvas = Fx.canvas(size)
       root.getChildren.addAll(
@@ -55,4 +57,4 @@ class CanvasWindow(title: String = "Canvas", size: (Int, Int) = (800, 640)) {
   }
 }
 
-object Canvas extends CanvasWindow
+object SimpleCanvas extends CanvasWindow

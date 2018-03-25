@@ -16,7 +16,7 @@ object Fx {
       javafx.application.Application.launch(classOf[MinimalFxApp])
     }
     // Below ugly polling solves error: "Toolkit not initialized on line 28"
-    while (!isStarted) { Thread.sleep(100) }
+    while (!isStarted) { Thread.sleep(10) }
  }
 
   def runInFxThread(block: => Unit): Unit = javafx.application.Platform.runLater {

@@ -1,11 +1,13 @@
 object Main {
-  import Canvas._
+  import SimpleCanvas._
+
   def main(args: Array[String]): Unit = {
     println("Launching application...")
 
     line((10,10),(100,100))
 
     rect((200,200), (30, 70))
+    title("Första Simpla Canvas-fönstret")
 
     // Fx.newWindow { stage =>
     //   stage.setTitle("nytt fönster")
@@ -18,7 +20,6 @@ object Main {
 
     val cw = new CanvasWindow("ännu ett fönster")
     cw.rect((200,200), (30, 70))
-    (3 to 10).foreach{ i => new CanvasWindow(s"fönster $i")}
-    //cw.withStage(s => s.setTitle("NU DÅ??"))
+    val ws = (3 to 10).map{ i => new CanvasWindow(s"fönster $i")}
   }
 }

@@ -50,11 +50,11 @@ class CanvasWindow(initTitle: String = "Canvas", size: (Int, Int) = (800, 640)) 
         _canvas
       )
       stage.setScene(new javafx.scene.Scene(root, size._1, size._2))
-      stage.setResizable(false)
+      //stage.setResizable(false)
       stage.show
       _stage = stage
       _isInitialized = true
   }
 }
 
-object SimpleCanvas extends CanvasWindow
+object Canvas extends CanvasWindow

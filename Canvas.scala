@@ -1,4 +1,8 @@
-class CanvasWindow(initTitle: String = "Canvas", size: (Int, Int) = (800, 640)) {
+class CanvasWindow(
+  val initTitle: String = "Canvas",
+  val initSize: (Int, Int) = (800, 640),
+  val background: javafx.scene.paint.Color = javafx.scene.paint.Color.BLACK
+) {
 
   type Callback = () => Unit
   var onOpen: Callback = () => println("Open menu selected")
@@ -6,15 +10,13 @@ class CanvasWindow(initTitle: String = "Canvas", size: (Int, Int) = (800, 640)) 
   var onQuit: Callback = () => Fx.stop
   var onFullScreen: Callback = () => println(s"isFullScreen == $isFullScreen")
 
-  private var _isInitialized = false
-  private var _stage: javafx.stage.Stage = _
-
   def withStage(callback: javafx.stage.Stage => Unit): Unit =
-    Fx.runInFxThread { callback(_stage) }
+    Fx.runInFxThread { callback(stage) }
 
-  def isFullScreen = _isInitialized && _stage.isFullScreen
+  def isFullScreen = stage.isFullScreen
+  def setFullScreen(isFull: Boolean): Unit = Fx.runInFxThread{ stage.setFullScreen(isFull) }
 
-  private var _canvas: javafx.scene.canvas.Canvas = _
+  protected var _canvas: javafx.scene.canvas.Canvas = _
 
   def withGraphics(callback: javafx.scene.canvas.GraphicsContext => Unit) =
     Fx.runInFxThread{ callback(_canvas.getGraphicsContext2D) }
@@ -27,14 +29,19 @@ class CanvasWindow(initTitle: String = "Canvas", size: (Int, Int) = (800, 640)) 
     gc.fillRect(p._1, p._2, dxy._1, dxy._2)
   }
 
-  def title(newTitle: String): Unit = withStage { _.setTitle(newTitle) }
+  def setTitle(newTitle: String): Unit = withStage { _.setTitle(newTitle) }
+  def getSize: (Double, Double) = (stage.getWidth, stage.getHeight)
 
-  Fx.newWindow { stage =>
-      stage.setTitle(initTitle)
+  protected val stage: javafx.stage.Stage = Fx.mkStage { s =>
+      s.show
+      s.setTitle(initTitle)
       val root = new javafx.scene.layout.VBox
-      _canvas = Fx.canvas(size)
+      _canvas = new javafx.scene.canvas.Canvas(initSize._1, initSize._2)
+      _canvas.getGraphicsContext2D.setStroke(background.invert)
+      s.setScene(new javafx.scene.Scene(root, initSize._1, initSize._2, background))
       root.getChildren.addAll(
-        Fx.menuBar(
+        _canvas
+      /*  Fx.menuBar(
           Fx.menu("File",
             Fx.menuItem("Open...", "Ctrl+O", onOpen),
             Fx.menuItem("Save...", "Ctrl+S", onSave),
@@ -42,18 +49,13 @@ class CanvasWindow(initTitle: String = "Canvas", size: (Int, Int) = (800, 640)) 
           ),
           Fx.menu("View",
             Fx.menuItem("Toggle Full Screen", "F11", () => {
-              stage.setFullScreen(!isFullScreen)
+              stage.setFullScreen(!stage.isFullScreen)
               onFullScreen()
             })
           )
-        ),
-        _canvas
+        ),*/
       )
-      stage.setScene(new javafx.scene.Scene(root, size._1, size._2))
-      //stage.setResizable(false)
-      stage.show
-      _stage = stage
-      _isInitialized = true
+      //s.setResizable(false)
   }
 }
 

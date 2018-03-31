@@ -9,12 +9,14 @@ object Fx {
   def isStarted = signalFxStarted.getCount() == 0
 
   private def launchApp(initPrimaryStage: javafx.stage.Stage => Unit): Unit = {
+    val t0 = System.nanoTime
     delayedAppInit = initPrimaryStage  // only assigned once here
     new Thread( () => {
-      javafx.application.Application.launch(classOf[ApplicationWindow]) // blocks until exit
+      javafx.application.Application.launch(classOf[UnderlyingApp]) // blocks until exit
     }).start
     signalFxStarted.await
- }
+    println(s"JavaFX Toolkit launched in ${(System.nanoTime - t0)/1000000} ms")
+  }
 
   def runInFxThread(block: => Unit): Unit =
     javafx.application.Platform.runLater { () => block }
@@ -35,14 +37,14 @@ object Fx {
       stage
     }
 
-  private class ApplicationWindow extends javafx.application.Application {
+  private class UnderlyingApp extends javafx.application.Application {
     override def start(primaryStage: javafx.stage.Stage): Unit = {
       _primaryStage = primaryStage  // only assigned once here
       delayedAppInit(primaryStage)  // only called once here
       signalFxStarted.countDown
     }
     override def stop(): Unit = {
-      println("Fx Stopped")
+      println("JavaFX Toolkit Application stopped.")
     }
   }
 

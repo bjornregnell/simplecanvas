@@ -6,7 +6,7 @@ object Fx {
   @volatile private var delayedAppInit: javafx.stage.Stage => Unit = _
 
   private val signalFxStarted = new java.util.concurrent.CountDownLatch(1)
-  def isStarted = signalFxStarted.getCount() == 0
+  def isStarted: Boolean = signalFxStarted.getCount() == 0
 
   private def launchApp(initPrimaryStage: javafx.stage.Stage => Unit): Unit = {
     val t0 = System.nanoTime
@@ -21,20 +21,21 @@ object Fx {
   def runInFxThread(block: => Unit): Unit =
     javafx.application.Platform.runLater { () => block }
 
+  /** Creates a new window and at first call launches the application. */
   def mkStage(init: javafx.stage.Stage => Unit): javafx.stage.Stage =
     if (!isStarted) {
       launchApp(init)
       primaryStage
     } else {
       val ready = new java.util.concurrent.CountDownLatch(1)
-      var stage: javafx.stage.Stage = null
+      var nonPrimaryStage: javafx.stage.Stage = null
       runInFxThread {
-        stage = new javafx.stage.Stage;
-        init(stage)
+        nonPrimaryStage = new javafx.stage.Stage;
+        init(nonPrimaryStage)
         ready.countDown
       }
       ready.await
-      stage
+      nonPrimaryStage
     }
 
   private class UnderlyingApp extends javafx.application.Application {
@@ -48,11 +49,6 @@ object Fx {
     }
   }
 
-  def eventHandler(action: () => Unit): javafx.event.EventHandler[javafx.event.ActionEvent] =
-    new javafx.event.EventHandler[javafx.event.ActionEvent] {
-      override def handle(e: javafx.event.ActionEvent): Unit = action()
-    }
-
   def menuItem(
     name: String,
     shortcut: String = "",
@@ -60,7 +56,7 @@ object Fx {
   ): javafx.scene.control.MenuItem = {
     val item = javafx.scene.control.MenuItemBuilder.create()
       .text(name)
-      .onAction(eventHandler(action))
+      .onAction(e => action())
       .build()
     if (shortcut.nonEmpty) {
       item.setAccelerator(javafx.scene.input.KeyCombination.keyCombination(shortcut))
@@ -74,10 +70,7 @@ object Fx {
     menu
   }
 
-  def menuBar(items: javafx.scene.control.Menu*) =
-    new javafx.scene.control.MenuBar(items:_*)
-
-  def canvas(size: (Int, Int)) = new javafx.scene.canvas.Canvas(size._1, size._2)
+  def menuBar(items: javafx.scene.control.Menu*) = new javafx.scene.control.MenuBar(items:_*)
 
   def stop(): Unit = javafx.application.Platform.exit
 }

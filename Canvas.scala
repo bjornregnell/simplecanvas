@@ -40,36 +40,29 @@ class CanvasWindow(
   /*protected*/ val canvas = new javafx.scene.canvas.Canvas(initSize._1, initSize._2)
   /*protected*/ val root = new javafx.scene.layout.VBox
   /*protected*/ val scene = new javafx.scene.Scene(root, initSize._1, initSize._2, background)
-  /*protected*/ def gc = canvas.getGraphicsContext2D
+  /*protected*/ val gc = canvas.getGraphicsContext2D
+  def getGraphics = gc
 
-  def withGraphics(callback: javafx.scene.canvas.GraphicsContext => Unit) =
-    Fx.runInFxThread{ callback(canvas.getGraphicsContext2D) }
+  def line(x1: Double, y1: Double, x2: Double, y2: Double): Unit =  gc.strokeLine(x1,y1,x2,y2)
 
-  def line(x1: Double, y1: Double, x2: Double, y2: Double): Unit =  withGraphics { gc =>
-    gc.strokeLine(x1,y1,x2,y2)
-  }
-
-  def line(p1: (Double, Double))(p2: (Double, Double)): Unit =  withGraphics { gc =>
+  def line(p1: (Double, Double))(p2: (Double, Double)): Unit =
     gc.strokeLine(p1._1, p1._2, p2._1, p2._2)
-  }
 
-  def rect(x: Int, y: Int, width: Int, height: Int): Unit = withGraphics { gc =>
-    gc.strokeRect(x, y, width, height)
-  }
+  def rect(x: Int, y: Int, width: Int, height: Int): Unit = gc.strokeRect(x, y, width, height)
 
-  def rect(p:(Int, Int))(dxy: (Int, Int)): Unit = withGraphics { gc =>
-    gc.strokeRect(p._1, p._2, dxy._1, dxy._2)
-  }
+  def rect(p:(Int, Int))(dxy: (Int, Int)): Unit = gc.strokeRect(p._1, p._2, dxy._1, dxy._2)
 
   def writeText(text: String, x: Double, y: Double): Unit = gc.strokeText(text, x, y)
 
   def setTitle(newTitle: String): Unit = withStage { _.setTitle(newTitle) }
   def size: (Double, Double) = (stage.getWidth, stage.getHeight)
+  def clear(): Unit = gc.clearRect(0, 0, size._1, size._2)
 
-  /*protected*/ lazy val menuBar =
+
+  /*protected*/ lazy val appMenuBar =
                       Fx.menuBar(
                         Fx.menu("File",
-                          Fx.menuItem("Quit",    "Ctrl+Q", () => Fx.stop)
+                          Fx.menuItem("Quit", "Ctrl+Q", () => Fx.stop)
                         ),
                         Fx.menu("View",
                           Fx.menuItem("Toggle Full Screen", "F11", () => stage.setFullScreen(!stage.isFullScreen))
@@ -83,8 +76,7 @@ class CanvasWindow(
       gc.setStroke(background.invert)
       s.setScene(scene)
       root.getChildren.add(canvas)
-      if (hasAppMenu) root.getChildren.add(0, menuBar)
-      // s.setResizable(false)
+      if (hasAppMenu) root.getChildren.add(0, appMenuBar)
       scene.setOnKeyPressed (ke => { println(s"\nkey $ke"); eventQ.offer(ke) })
       scene.setOnKeyReleased(ke => { println(s"\nkey $ke"); eventQ.offer(ke) })
       scene.setOnMousePressed (ke => { println(s"\nkey $ke"); eventQ.offer(ke) })

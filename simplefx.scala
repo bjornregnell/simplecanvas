@@ -1,3 +1,5 @@
+package simplefx
+
 /** A wrapper with utils for simpler access to javafx */
 object Fx {
   @volatile private var _primaryStage: javafx.stage.Stage = _

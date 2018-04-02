@@ -2,6 +2,9 @@ package simplefx
 
 /** A wrapper with utils for simpler access to javafx */
 object Fx {
+  @volatile var isDebug = true
+  def debug[T](a: T) = if (isDebug) println(a.toString)
+
   @volatile private var _primaryStage: javafx.stage.Stage = _
   def primaryStage: javafx.stage.Stage = _primaryStage
 
@@ -17,7 +20,7 @@ object Fx {
       javafx.application.Application.launch(classOf[UnderlyingApp]) // blocks until exit
     }).start
     signalFxStarted.await
-    println(s"JavaFX Toolkit launched in ${(System.nanoTime - t0)/1000000} ms")
+    debug(s"JavaFX Toolkit launched in ${(System.nanoTime - t0)/1000000} ms")
   }
 
   def runInFxThread(block: => Unit): Unit =
@@ -47,7 +50,7 @@ object Fx {
       signalFxStarted.countDown
     }
     override def stop(): Unit = {
-      println("JavaFX Toolkit Application stopped.")
+      debug("JavaFX Toolkit Application stopped.")
     }
   }
 

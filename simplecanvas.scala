@@ -1,10 +1,35 @@
 package simplecanvas
 import simplefx._
 
+case class Color(red: Int, green: Int, blue: Int, opacity: Double){
+  require(Seq(red, green, blue).forall(c => Range(0,256).contains(c)))
+  def fxColor: javafx.scene.paint.Color = ???
+}
+object Color {
+  val BLACK = Color(javafx.scene.paint.Color.BLACK)
+  val WHITE = Color(javafx.scene.paint.Color.WHITE)
+  val RED   = Color(javafx.scene.paint.Color.RED)
+  val GREEN = Color(javafx.scene.paint.Color.GREEN)
+  val BLUE  = Color(javafx.scene.paint.Color.BLUE)
+  def apply(c: javafx.scene.paint.Color) = {
+    def rgb(c: Double): Int = (c * 256).toInt
+    new Color(rgb(c.getRed), rgb(c.getGreen), rgb(c.getBlue), c.getOpacity)
+  }
+}
+
 /** A graphics api with keyboard and mouse events for beginner programmers. */
 trait SimpleCanvas {
-  /** Draw line from (x1, y1) to (x2, y2) using current width and color */
+  /** Draw line from (x1, y1) to (x2, y2) using the current lineWidth and lineColor */
   def line(x1: Double, y1: Double, x2: Double, y2: Double): Unit
+
+  /** */
+  def setLineColor(c: Color): Unit
+
+  /** Fill a rectangle at (x, y) to (x2, y2) using current width and color */
+  def fill(x1: Double, y1: Double, x2: Double, y2: Double): Unit
+
+  /** */
+  def setFillColor(c: Color): Unit
 
   /** */
   def writeText(text: String, x: Double, y: Double): Unit
@@ -115,10 +140,14 @@ class CanvasWindow(
   protected val canvas = new javafx.scene.canvas.Canvas(initSize._1, initSize._2)
   protected val root = new javafx.scene.layout.VBox
   protected val scene = new javafx.scene.Scene(root, initSize._1, initSize._2, background)
-  protected val gc = canvas.getGraphicsContext2D
+  protected def gc = canvas.getGraphicsContext2D
   def getGraphicsContext = gc
 
   def line(x1: Double, y1: Double, x2: Double, y2: Double): Unit =  gc.strokeLine(x1,y1,x2,y2)
+  def setLineColor(c: Color): Unit = gc.setStroke(c.fxColor)
+
+  def fill(x1: Double, y1: Double, x2: Double, y2: Double): Unit =  gc.fillRect(x1,y1,x2,y2)
+  def setFillColor(c: Color): Unit = gc.setFill(c.fxColor)
 
   def writeText(text: String, x: Double, y: Double): Unit = gc.strokeText(text, x, y)
 
@@ -141,9 +170,9 @@ class CanvasWindow(
       s.setScene(scene)
       root.getChildren.add(canvas)
       if (showBasicMenu) root.getChildren.add(0, basicMenuBar)
-      scene.setOnKeyPressed   (e => {println(e); eventQueue.offer(e)})
-      scene.setOnKeyReleased  (e => {println(e); eventQueue.offer(e)})
-      scene.setOnMousePressed (e => {println(e); eventQueue.offer(e)})
-      scene.setOnMouseReleased(e => {println(e); eventQueue.offer(e)})
+      scene.setOnKeyPressed   (e => {Fx.debug(e); eventQueue.offer(e)})
+      scene.setOnKeyReleased  (e => {Fx.debug(e); eventQueue.offer(e)})
+      scene.setOnMousePressed (e => {Fx.debug(e); eventQueue.offer(e)})
+      scene.setOnMouseReleased(e => {Fx.debug(e); eventQueue.offer(e)})
   }
 }

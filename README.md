@@ -1,4 +1,4 @@
-# simple-canvas
+# simplecanvas
 ## What is it?
 *  `simplecanvas` is a minimal [Scala](http://www.scala-lang.org/) library for beginner-friendly 2D game programming used in undergraduate teaching at [Lund University](http:cs.lth.se/pgk).
 

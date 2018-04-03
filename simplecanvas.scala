@@ -6,11 +6,11 @@ case class Color(red: Int, green: Int, blue: Int, opacity: Double){
   def fxColor: javafx.scene.paint.Color = javafx.scene.paint.Color.rgb(red,green,blue,opacity)
 }
 object Color {
-  val BLACK = Color(javafx.scene.paint.Color.BLACK)
-  val WHITE = Color(javafx.scene.paint.Color.WHITE)
-  val RED   = Color(javafx.scene.paint.Color.RED)
-  val GREEN = Color(javafx.scene.paint.Color.GREEN)
-  val BLUE  = Color(javafx.scene.paint.Color.BLUE)
+  val Black = Color(javafx.scene.paint.Color.BLACK)
+  val White = Color(javafx.scene.paint.Color.WHITE)
+  val Red   = Color(javafx.scene.paint.Color.RED)
+  val Green = Color(javafx.scene.paint.Color.GREEN)
+  val Blue  = Color(javafx.scene.paint.Color.BLUE)
   def apply(c: javafx.scene.paint.Color) = {
     def rgb(c: Double): Int = (c * 255).toInt
     new Color(rgb(c.getRed), rgb(c.getGreen), rgb(c.getBlue), c.getOpacity)

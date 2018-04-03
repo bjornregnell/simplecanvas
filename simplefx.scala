@@ -49,6 +49,8 @@ object Fx {
   def runInFxThread(block: => Unit): Unit =
     javafx.application.Platform.runLater { () => block }
 
+  def apply(block: => Unit): Unit = runInFxThread(block)
+
   /** Creates a new window and at first call launches the application. */
   def mkStage(init: javafx.stage.Stage => Unit): javafx.stage.Stage =
     if (fxState.attemptStart) {
@@ -67,7 +69,7 @@ object Fx {
         ready.countDown
       }
       ready.await
-      debug(s"JavaFX secondary stage created in ${(System.nanoTime - t0)/1000000} ms")
+      debug(s"JavaFX stage constructed in ${(System.nanoTime - t0)/1000000} ms")
       nonPrimaryStage
     }
 
@@ -75,6 +77,7 @@ object Fx {
     override def start(primaryStage: javafx.stage.Stage): Unit = {
       _primaryStage = primaryStage  // only assigned once here
       delayedAppInit(primaryStage)  // only called once here
+      javafx.application.Platform.setImplicitExit(false) // dont exit javafx ehrn app closed
       fxState.hasStarted  // release all threads waiting for toolkit to start
     }
     override def stop(): Unit = {

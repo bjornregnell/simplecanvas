@@ -25,6 +25,8 @@ trait SimpleCanvas {
   /** */
   def setLineColor(c: Color): Unit
 
+  def setLineWidth(width: Double): Unit
+
   /** Fill a rectangle at (x, y) to (x2, y2) using current width and color */
   def fill(x1: Double, y1: Double, x2: Double, y2: Double): Unit
 
@@ -44,12 +46,18 @@ trait SimpleCanvas {
   def clear(): Unit
 
   /** */
+  def hide(): Unit
+  def show(): Unit
+  def focus(): Unit
+
+
+  /** */
   object Event {
     val KeyPressed    = 0
     val KeyReleased   = 1
     val MousePressed  = 2
     val MouseReleased = 3
-    val WindowClosed  = 4
+    val WindowHiding  = 4
     val Undefined     = -1
   }
 
@@ -71,8 +79,7 @@ trait SimpleCanvas {
   /** */
   def lastKeyText: String
 
-  /** Enable advanced graphics via underlying JavaFX Canvas */
-  def getGraphicsContext: javafx.scene.canvas.GraphicsContext
+  def lastMousePos: (Double, Double)
 }
 
 /** A module ready to use in the Scala REPL or in a main Scala program */
@@ -81,9 +88,9 @@ object Canvas extends CanvasWindow
 /** Implements the SimpleCanvasApi using JavaFX via the Fx layer */
 class CanvasWindow(
   val initTitle: String = "Canvas",
-  val initSize: (Int, Int) = (800, 640),
+  val initSize: (Int, Int) = (1000, 1000),
   val background: javafx.scene.paint.Color = javafx.scene.paint.Color.BLACK,
-  val showBasicMenu: Boolean = true
+  val showBasicMenu: Boolean = false
 ) extends SimpleCanvas {
 
   protected val eventQueueCapacity = 1000
@@ -122,6 +129,10 @@ class CanvasWindow(
         case _ => _lastEventType = Event.Undefined
       }
 
+    case we: javafx.stage.WindowEvent
+      if we.getEventType == javafx.stage.WindowEvent.WINDOW_HIDING =>
+        _lastEventType = Event.WindowHiding
+
     case e => _lastEventType = Event.Undefined
   }
 
@@ -130,33 +141,40 @@ class CanvasWindow(
   def waitForEvent(timeoutInMillis: Long): Unit = {
     val e = eventQueue.poll(timeoutInMillis, java.util.concurrent.TimeUnit.MILLISECONDS)
     if (e != null) handleEvent(e)
+    else _lastEventType = Event.Undefined
   }
 
   def delay(millis: Long): Unit = Thread.sleep(millis)
 
   def isFullScreen: Boolean = stage.isFullScreen
-  def setFullScreen(isFull: Boolean): Unit = Fx.runInFxThread{ stage.setFullScreen(isFull) }
+  def setFullScreen(isFull: Boolean): Unit = Fx(stage.setFullScreen(isFull))
 
   protected val canvas = new javafx.scene.canvas.Canvas(initSize._1, initSize._2)
   protected val root = new javafx.scene.layout.VBox
   protected val scene = new javafx.scene.Scene(root, initSize._1, initSize._2, background)
-  protected def gc = canvas.getGraphicsContext2D
-  def getGraphicsContext = gc
 
-  def line(x1: Double, y1: Double, x2: Double, y2: Double): Unit =  gc.strokeLine(x1,y1,x2,y2)
-  def setLineColor(c: Color): Unit = gc.setStroke(c.fxColor)
+  protected def withGC(callback: javafx.scene.canvas.GraphicsContext => Unit): Unit =
+    Fx(callback(canvas.getGraphicsContext2D))
 
-  def fill(x1: Double, y1: Double, x2: Double, y2: Double): Unit =  gc.fillRect(x1,y1,x2,y2)
-  def setFillColor(c: Color): Unit = gc.setFill(c.fxColor)
+  def line(x1: Double, y1: Double, x2: Double, y2: Double): Unit =  withGC(_.strokeLine(x1,y1,x2,y2))
+  def setLineColor(c: Color): Unit = withGC(_.setStroke(c.fxColor))
 
-  def writeText(text: String, x: Double, y: Double): Unit = gc.strokeText(text, x, y)
+  def setLineWidth(width: Double): Unit = withGC(_.setLineWidth(width))
+
+  def fill(x1: Double, y1: Double, x2: Double, y2: Double): Unit =  withGC(_.fillRect(x1,y1,x2,y2))
+  def setFillColor(c: Color): Unit = withGC(_.setFill(c.fxColor))
+
+  def writeText(text: String, x: Double, y: Double): Unit = withGC(_.strokeText(text, x, y))
 
   def size: (Double, Double) = (stage.getWidth, stage.getHeight)
-  def clear(): Unit = gc.clearRect(0, 0, size._1, size._2)
+  def clear(): Unit = withGC(_.clearRect(0, 0, size._1, size._2))
+  def hide():  Unit = Fx(stage.hide)
+  def show():  Unit = Fx(stage.show)
+  def focus(): Unit = Fx(stage.requestFocus)
 
   protected lazy val basicMenuBar =
     Fx.menuBar(
-      Fx.menu("File", Fx.menuItem("Quit", "Ctrl+Q", () => Fx.stop)),
+      Fx.menu("File", Fx.menuItem("Quit", "Ctrl+Q", () => System.exit(0))), // Fx.stop() ??
       Fx.menu("View", Fx.menuItem("Toggle Full Screen", "F11",
         () => stage.setFullScreen(!stage.isFullScreen))
       )
@@ -166,7 +184,7 @@ class CanvasWindow(
       s.show
       s.setTitle(initTitle)
       root.setBackground(javafx.scene.layout.Background.EMPTY)
-      gc.setStroke(background.invert)
+      canvas.getGraphicsContext2D.setStroke(background.invert)
       s.setScene(scene)
       root.getChildren.add(canvas)
       if (showBasicMenu) root.getChildren.add(0, basicMenuBar)
@@ -174,5 +192,6 @@ class CanvasWindow(
       scene.setOnKeyReleased  (e => {Fx.debug(e); eventQueue.offer(e)})
       scene.setOnMousePressed (e => {Fx.debug(e); eventQueue.offer(e)})
       scene.setOnMouseReleased(e => {Fx.debug(e); eventQueue.offer(e)})
+      s.setOnHiding( e =>  {Fx.debug(e); eventQueue.offer(e)})
   }
 }

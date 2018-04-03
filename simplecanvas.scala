@@ -3,7 +3,7 @@ import simplefx._
 
 case class Color(red: Int, green: Int, blue: Int, opacity: Double){
   require(Seq(red, green, blue).forall(c => Range(0,256).contains(c)))
-  def fxColor: javafx.scene.paint.Color = ???
+  def fxColor: javafx.scene.paint.Color = javafx.scene.paint.Color.rgb(red,green,blue,opacity)
 }
 object Color {
   val BLACK = Color(javafx.scene.paint.Color.BLACK)
@@ -12,7 +12,7 @@ object Color {
   val GREEN = Color(javafx.scene.paint.Color.GREEN)
   val BLUE  = Color(javafx.scene.paint.Color.BLUE)
   def apply(c: javafx.scene.paint.Color) = {
-    def rgb(c: Double): Int = (c * 256).toInt
+    def rgb(c: Double): Int = (c * 255).toInt
     new Color(rgb(c.getRed), rgb(c.getGreen), rgb(c.getBlue), c.getOpacity)
   }
 }
@@ -107,7 +107,7 @@ class CanvasWindow(
   protected def handleEvent(e: javafx.event.Event): Unit = e match {
     case ke: javafx.scene.input.KeyEvent =>
       _lastKeyCode = ke.getCode
-      _lastKeyText = ke.getText
+      _lastKeyText = ke.getText   // Handle undefined...
       ke.getEventType match {
         case javafx.scene.input.KeyEvent.KEY_PRESSED => _lastEventType = Event.KeyPressed
         case javafx.scene.input.KeyEvent.KEY_RELEASED => _lastEventType = Event.KeyReleased

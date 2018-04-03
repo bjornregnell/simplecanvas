@@ -1,4 +1,4 @@
-        name := "simple-canvas"
+        name := "simplecanvas"
      version := "0.1.1-SNAPSHOT"
 organization := "se.bjornregnell"
 scalaVersion := "2.12.5"

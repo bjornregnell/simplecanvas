@@ -10,17 +10,40 @@ object Fx {
 
   @volatile private var delayedAppInit: javafx.stage.Stage => Unit = _
 
-  private val signalFxStarted = new java.util.concurrent.CountDownLatch(1)
-  def isStarted: Boolean = signalFxStarted.getCount() == 0
+  class FXState {
+    val Unstarted = 0
+    val Starting  = 1
+    val Started   = 2
+
+    private var state = Unstarted
+
+    def attemptStart(): Boolean = this.synchronized {
+      if (state == Unstarted) { // is this the first time asking
+        state = Starting
+        true
+      } else {
+        waitUntilStarted() // you have to wait for toolkit to start
+        false
+      }
+    }
+
+    def waitUntilStarted(): Unit = this.synchronized {
+      while (state != Started) wait()
+    }
+
+    def hasStarted(): Unit = this.synchronized {
+      state = Started
+      notifyAll
+    }
+  }
+
+  private val fxState = new FXState
 
   private def launchApp(initPrimaryStage: javafx.stage.Stage => Unit): Unit = {
-    val t0 = System.nanoTime
     delayedAppInit = initPrimaryStage  // only assigned once here
     new Thread( () => {
       javafx.application.Application.launch(classOf[UnderlyingApp]) // blocks until exit
     }).start
-    signalFxStarted.await
-    debug(s"JavaFX Toolkit launched in ${(System.nanoTime - t0)/1000000} ms")
   }
 
   def runInFxThread(block: => Unit): Unit =
@@ -28,18 +51,23 @@ object Fx {
 
   /** Creates a new window and at first call launches the application. */
   def mkStage(init: javafx.stage.Stage => Unit): javafx.stage.Stage =
-    if (!isStarted) {
+    if (fxState.attemptStart) {
+      val t0 = System.nanoTime
       launchApp(init)
+      fxState.waitUntilStarted()  // blocks until UnderlyingApp.start is called
+      debug(s"JavaFX Toolkit launched in ${(System.nanoTime - t0)/1000000} ms")
       primaryStage
     } else {
       val ready = new java.util.concurrent.CountDownLatch(1)
       var nonPrimaryStage: javafx.stage.Stage = null
+      val t0 = System.nanoTime
       runInFxThread {
         nonPrimaryStage = new javafx.stage.Stage;
         init(nonPrimaryStage)
         ready.countDown
       }
       ready.await
+      debug(s"JavaFX secondary stage created in ${(System.nanoTime - t0)/1000000} ms")
       nonPrimaryStage
     }
 
@@ -47,7 +75,7 @@ object Fx {
     override def start(primaryStage: javafx.stage.Stage): Unit = {
       _primaryStage = primaryStage  // only assigned once here
       delayedAppInit(primaryStage)  // only called once here
-      signalFxStarted.countDown
+      fxState.hasStarted  // release all threads waiting for toolkit to start
     }
     override def stop(): Unit = {
       debug("JavaFX Toolkit Application stopped.")

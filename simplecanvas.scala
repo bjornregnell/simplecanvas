@@ -1,6 +1,15 @@
 package simplecanvas
 import simplefx._
 
+object Event {
+  val KeyPressed    = 0
+  val KeyReleased   = 1
+  val MousePressed  = 2
+  val MouseReleased = 3
+  val WindowHiding  = 4
+  val Undefined     = -1
+}
+
 case class Color(red: Int, green: Int, blue: Int, opacity: Double){
   require(Seq(red, green, blue).forall(c => Range(0,256).contains(c)))
   def fxColor: javafx.scene.paint.Color = javafx.scene.paint.Color.rgb(red,green,blue,opacity)
@@ -49,17 +58,6 @@ trait SimpleCanvas {
   def hide(): Unit
   def show(): Unit
   def focus(): Unit
-
-
-  /** */
-  object Event {
-    val KeyPressed    = 0
-    val KeyReleased   = 1
-    val MousePressed  = 2
-    val MouseReleased = 3
-    val WindowHiding  = 4
-    val Undefined     = -1
-  }
 
   /** */
   def hasNextEvent: Boolean
@@ -192,6 +190,6 @@ class CanvasWindow(
       scene.setOnKeyReleased  (e => {Fx.debug(e); eventQueue.offer(e)})
       scene.setOnMousePressed (e => {Fx.debug(e); eventQueue.offer(e)})
       scene.setOnMouseReleased(e => {Fx.debug(e); eventQueue.offer(e)})
-      s.setOnHiding( e =>  {Fx.debug(e); eventQueue.offer(e)})
+      s.setOnHiding( e =>  {Fx.debug(e); System.exit(0)/*eventQueue.offer(e)*/})
   }
 }

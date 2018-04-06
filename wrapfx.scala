@@ -1,8 +1,8 @@
-package simplefx
+package wrapfx
 
 /** A wrapper with utils for simpler access to javafx */
 object Fx {
-  @volatile var isDebug = true
+  @volatile var isDebug = false
   def debug[T](a: T) = if (isDebug) println(a.toString)
 
   @volatile private var _primaryStage: javafx.stage.Stage = _

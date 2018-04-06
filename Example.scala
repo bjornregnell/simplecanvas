@@ -1,26 +1,27 @@
-package simplecanvas
 import simplecanvas._
-import javafx.scene.input.KeyCode
 
 object Example {
 
   object State {
-    val xMax = 600
-    val yMax = 400
-    val xMin = 100
-    val yMin = 100
+    val xMax = 1100.0
+    val yMax = 400.0
+    val xMin = 100.0
+    val yMin = 100.0
 
-    val millisPerFrame = 15
-    val maxWaitForEventMillis = 2
+    val millisPerFrame        = 5
+    val framesPerSecond       = (1000.0 / millisPerFrame).round
+    val maxWaitForEventMillis = 1
 
-    var x = 100.0
-    var y = 100.0
-    var step = 10
-    var dy = 0
-    var dx = 0
+    var x    = 100.0
+    var y    = 100.0
+    var step = 25.0
+    var dy   = 0.0
+    var dx   = 0.0
 
     val colvec = Vector(Color.Red, Color.Green, Color.Blue)
     var colorIndex = 0
+
+    var isClosed = false
   }
 
   import State._
@@ -31,30 +32,38 @@ object Example {
   }
 
   def now = System.nanoTime
-  def elapsedMillis(since: Long): Long = (now - since) / 1000000L
+  def elapsedMillis(since: Long): Double = (now - since) / 1e6
 
   def init(): Unit = {
-    Canvas.focus
+    Canvas.show // show window and request focus
     Canvas.setLineWidth(20)
     toggleColor()
+    println(s"Looping at $framesPerSecond frame/s, $millisPerFrame ms/frame")
   }
 
   def handleEvent(): Unit = {
     import Canvas._
+    import javafx.scene.input.KeyCode
+
     if (lastEventType == Event.KeyPressed) {
       if (lastKeyCode == KeyCode.DOWN)  { dx = 0;     dy = step  }
       if (lastKeyCode == KeyCode.UP)    { dx = 0;     dy = -step }
       if (lastKeyCode == KeyCode.RIGHT) { dx = step;  dy = 0     }
       if (lastKeyCode == KeyCode.LEFT)  { dx = -step; dy = 0     }
-      if (lastKeyCode == KeyCode.F11) setFullScreen(!isFullScreen)
+      //if (lastKeyCode == KeyCode.F11) setFullScreen(!isFullScreen)
       toggleColor()
+    } else if (lastEventType == Event.WindowClosed) {
+      println("Window Closed!")
+      isClosed = true
     } else if (lastEventType != Event.Undefined) {
      println(s"""
        lastEventType: $lastEventType
        lastKeyCode:  "$lastKeyCode"
+       lastKeyText:  "$lastKeyText"
+       KEY           "${if (lastKeyCode == KeyCode.UNDEFINED && lastKeyText != "") lastKeyText.toUpperCase else lastKeyCode}"
        lastMousePos $lastMousePos
        (x,y)=($x,$y) (dx,dy)=($dx,$dy) size=$size """)
-    } else print(".")
+    } //else print(".")
   }
 
   def updateState(): Unit = {
@@ -70,9 +79,9 @@ object Example {
     y += dy
   }
 
-  def loopForever(): Unit = while (true) {
+  def loopUntilClosed(): Unit = while (!isClosed) {
     val t0 = now
-    Canvas.waitForEvent(maxWaitForEventMillis)
+    Canvas.awaitEvent(maxWaitForEventMillis)
 
     handleEvent()
     updateState()
@@ -80,13 +89,21 @@ object Example {
     val elapsed = elapsedMillis(since = t0)
     val delayMillis = millisPerFrame - elapsed
 
-    if (elapsed > 0) print(s" $elapsed ")
-    if (delayMillis > 0) Thread.sleep(delayMillis)
+    if (elapsed > millisPerFrame)
+      print(s" lag ${((elapsed - millisPerFrame)*100).round/100.0} ms ")
+    if (delayMillis > 0) Thread.sleep(delayMillis.round.toLong)
   }
 
   def main(args: Array[String]): Unit = {
     println(s"main started with args=$args")
     init()
-    loopForever()
+    loopUntilClosed()
+
+    /* Demo new canvas window: */
+    val w = new Canvas("Extra",(640,400),Color.Black,false)
+    w.writeText("Waiting for this window to close...",10,200)
+    do w.awaitEvent(1000) while (w.lastEventType != Event.WindowClosed)
+
+    Canvas.stopAllWindows
   }
 }

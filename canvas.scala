@@ -79,9 +79,9 @@ class CanvasWindow(
   protected def fxColor(c: Color): javafx.scene.paint.Color =
     javafx.scene.paint.Color.rgb(c.red, c.green, c.blue, c.alpha / 255.0)
 
-  protected val canvas = new javafx.scene.canvas.Canvas(initSize._1, initSize._2)
-  protected val root = new javafx.scene.layout.VBox
-  protected val scene =
+  protected lazy val canvas = new javafx.scene.canvas.Canvas(initSize._1, initSize._2)
+  protected lazy val root = new javafx.scene.layout.VBox
+  protected lazy val scene =
     new javafx.scene.Scene(root, initSize._1, initSize._2, fxColor(initBackground))
 
   protected def withGC(callback: javafx.scene.canvas.GraphicsContext => Unit): Unit =
@@ -104,7 +104,7 @@ class CanvasWindow(
 //  override def hideAndStop():  Unit = Fx(stage.hide)  TODO should this be expose???
   override def show():  Unit = Fx{stage.show; stage.requestFocus}
 
-  protected val basicMenuBar =
+  protected lazy val basicMenuBar =
     Fx.menuBar(
       Fx.menu("File", Fx.menuItem("Quit", "Ctrl+Q", () => System.exit(0))),
       Fx.menu("View", Fx.menuItem("Toggle Full Screen", "F11",
@@ -120,8 +120,8 @@ class CanvasWindow(
       s.setScene(scene)
       root.getChildren.add(canvas)
       if (initBasicMenu) root.getChildren.add(0, basicMenuBar)
-      canvas.setOnKeyPressed   (e => { Fx.debug(e); eventQueue.offer(e)} )
-      canvas.setOnKeyReleased  (e => { Fx.debug(e); eventQueue.offer(e)} )
+      scene.setOnKeyPressed   (e => { Fx.debug(e); eventQueue.offer(e)} )
+      scene.setOnKeyReleased  (e => { Fx.debug(e); eventQueue.offer(e)} )
       canvas.setOnMousePressed (e => { Fx.debug(e); eventQueue.offer(e)} )
       canvas.setOnMouseReleased(e => { Fx.debug(e); eventQueue.offer(e)} )
       s.setOnHiding( e =>  { Fx.debug(e); eventQueue.clear(); eventQueue.offer(e) })

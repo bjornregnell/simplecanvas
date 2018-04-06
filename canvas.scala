@@ -2,14 +2,25 @@ package simplecanvas
 import wrapfx._
 
 /** A module ready to use in the Scala REPL or in a main Scala program */
-object Canvas extends Canvas("Canvas", (1000,1000), Color.Black, true)
+object Canvas extends CanvasWindow(
+  initTitle      = "Canvas",
+  initSize       = (1000,1000),
+  initBackground = Color.Black,
+  initBasicMenu  = true
+) with GlobalControl {
+  override def systemExit(): Unit = System.exit(0)
+
+  override def stopAllWindows(): Unit= Fx.stop()
+
+  override def delay(millis: Int): Unit = Thread.sleep(millis)
+}
 
 /** Implements the SimpleCanvas api using javafx via the wrapfx layer */
-class Canvas(
-  override val initTitle: String ,
-  override val initSize: (Int, Int),
-  override val initBackground: Color,
-  override val initBasicMenu: Boolean
+class CanvasWindow(
+  override val initTitle: String      = "Another Canvas Window",
+  override val initSize: (Int, Int)   = (1000,1000),
+  override val initBackground: Color  = Color.Black,
+  override val initBasicMenu: Boolean = false,
 ) extends SimpleCanvas {
 
   protected val eventQueueCapacity = 1000
@@ -17,7 +28,7 @@ class Canvas(
     new java.util.concurrent.LinkedBlockingQueue[javafx.event.Event](eventQueueCapacity)
 
   protected var _lastEventType = Event.Undefined
-  override def lastEventType: Int = _lastEventType
+  override def lastEventType: String = _lastEventType
 
   protected var _lastKeyCode: javafx.scene.input.KeyCode = javafx.scene.input.KeyCode.UNDEFINED
   override def lastKeyCode: String =
@@ -26,7 +37,7 @@ class Canvas(
     else _lastKeyCode.toString
 
   protected var _lastKeyText = ""
-  override def lastKeyText: String = _lastKeyText 
+  override def lastKeyText: String = _lastKeyText
 
   protected var _lastMousePos = (0.0, 0.0)
   override def lastMousePos: (Double, Double) = _lastMousePos
@@ -56,19 +67,17 @@ class Canvas(
     case e => _lastEventType = Event.Undefined
   }
 
-  override def awaitEvent(timeoutInMillis: Long): Unit = {
+  override def awaitEvent(timeoutInMillis: Int): Unit = {
     val e = eventQueue.poll(timeoutInMillis, java.util.concurrent.TimeUnit.MILLISECONDS)
     if (e != null) handleEvent(e)
     else _lastEventType = Event.Undefined
   }
 
-  override def delay(millis: Long): Unit = Thread.sleep(millis)
-
   override def isFullScreen: Boolean = stage.isFullScreen
   override def setFullScreen(isFull: Boolean): Unit = Fx(stage.setFullScreen(isFull))
 
   protected def fxColor(c: Color): javafx.scene.paint.Color =
-    javafx.scene.paint.Color.rgb(c.red, c.green, c.blue, c.opacity)
+    javafx.scene.paint.Color.rgb(c.red, c.green, c.blue, c.alpha / 255.0)
 
   protected val canvas = new javafx.scene.canvas.Canvas(initSize._1, initSize._2)
   protected val root = new javafx.scene.layout.VBox
@@ -92,11 +101,10 @@ class Canvas(
   override def size: (Double, Double) = (stage.getWidth, stage.getHeight)
   override def clear(): Unit = withGC(_.clearRect(0, 0, size._1, size._2))
 
-//  override def hide():  Unit = Fx(stage.hide)
+//  override def hideAndStop():  Unit = Fx(stage.hide)  TODO should this be expose???
   override def show():  Unit = Fx{stage.show; stage.requestFocus}
-  override def stopAllWindows(): Unit = Fx.stop // ??? System.exit(0)
 
-  protected lazy val basicMenuBar =
+  protected val basicMenuBar =
     Fx.menuBar(
       Fx.menu("File", Fx.menuItem("Quit", "Ctrl+Q", () => System.exit(0))),
       Fx.menu("View", Fx.menuItem("Toggle Full Screen", "F11",
@@ -112,10 +120,10 @@ class Canvas(
       s.setScene(scene)
       root.getChildren.add(canvas)
       if (initBasicMenu) root.getChildren.add(0, basicMenuBar)
-      scene.setOnKeyPressed   (e => { Fx.debug(e); eventQueue.offer(e)} )
-      scene.setOnKeyReleased  (e => { Fx.debug(e); eventQueue.offer(e)} )
-      scene.setOnMousePressed (e => { Fx.debug(e); eventQueue.offer(e)} )
-      scene.setOnMouseReleased(e => { Fx.debug(e); eventQueue.offer(e)} )
+      canvas.setOnKeyPressed   (e => { Fx.debug(e); eventQueue.offer(e)} )
+      canvas.setOnKeyReleased  (e => { Fx.debug(e); eventQueue.offer(e)} )
+      canvas.setOnMousePressed (e => { Fx.debug(e); eventQueue.offer(e)} )
+      canvas.setOnMouseReleased(e => { Fx.debug(e); eventQueue.offer(e)} )
       s.setOnHiding( e =>  { Fx.debug(e); eventQueue.clear(); eventQueue.offer(e) })
   }
 }

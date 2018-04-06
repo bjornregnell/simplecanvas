@@ -1,18 +1,18 @@
 package simplecanvas
 
+/** Types of events that can happen in a canvas window */
 object Event {
-  val KeyPressed    = 0
-  val KeyReleased   = 1
-  val MousePressed  = 2
-  val MouseReleased = 3
-  val WindowClosed  = 4
-  val Undefined     = -1
+  val KeyPressed    = "KeyPressed"
+  val KeyReleased   = "KeyReleased"
+  val MousePressed  = "MousePressed"
+  val MouseReleased = "MouseReleased"
+  val WindowClosed  = "WindowClosed"
+
+  /** Used to indicate that no event is available */
+  val Undefined     = "Undefined"
 }
 
-case class Color(red: Int, green: Int, blue: Int, opacity: Double = 1.0){
-  require(Seq(red, green, blue).forall(i => Range(0,256).contains(i)))
-  require(opacity >= 0.0 && opacity <= 1.0)
-}
+/* Predefined colors. */
 object Color {
   val Black = Color(0,0,0)
   val White = Color(255, 255,255)
@@ -21,19 +21,27 @@ object Color {
   val Blue  = Color(0, 0, 255)
 }
 
+/* Custom rgb color with alpha controlling opacity. */
+case class Color(red: Int, green: Int, blue: Int, alpha: Int = 255){
+  require(0 to 255 contains red,   s"red=$red must be within 0 to 255")
+  require(0 to 255 contains green, s"green=$green must be within 0 to 255")
+  require(0 to 255 contains blue,  s"blue=$blue must be within 0 to 255")
+  require(0 to 255 contains alpha, s"alpha=$alpha must be within 0 to 255")
+}
+
 /** A graphics api with keyboard and mouse events for beginner programmers. */
 trait SimpleCanvas {
   /** Initial title of window */
-  val initTitle: String      = "SimpleCanvas"
+  val initTitle: String
 
   /** Initial size of window (width, height) */
-  val initSize: (Int, Int)   = (1000, 1000)
+  val initSize: (Int, Int)
 
   /** Initial background of window */
-  val initBackground: Color  = Color.Black
+  val initBackground: Color
 
   /** Initializes the application menu with basig items if true */
-  val initBasicMenu: Boolean = false
+  val initBasicMenu: Boolean
 
   /** Draw line from (x1, y1) to (x2, y2) using the current lineWidth and lineColor */
   def line(x1: Double, y1: Double, x2: Double, y2: Double): Unit
@@ -59,25 +67,16 @@ trait SimpleCanvas {
   def size: (Double, Double)
 
   /** */
-  def delay(millis: Long): Unit
-
-  /** */
   def clear(): Unit
 
   /** */
   def show(): Unit
 
   /** */
-//???  def hide(): Unit
+  def awaitEvent(timeoutInMillis: Int): Unit
 
   /** */
-  def stopAllWindows(): Unit
-
-  /** */
-  def awaitEvent(timeoutInMillis: Long): Unit
-
-  /** */
-  def lastEventType: Int
+  def lastEventType: String
 
   /** */
   def lastKeyCode: String
@@ -90,4 +89,15 @@ trait SimpleCanvas {
   def isFullScreen: Boolean
 
   def setFullScreen(isFull: Boolean): Unit
+}
+
+trait GlobalControl {
+  /** Exit application */
+  def systemExit(): Unit
+
+  /** Stop and close all windows */
+  def stopAllWindows(): Unit
+
+  /** Delay current thread for millis milliseconds*/
+  def delay(millis: Int): Unit
 }

@@ -1,1 +1,1 @@
-scala -cp target/scala-2.12/classes/ simplecanvas.Example
+scala -cp target/scala-2.12/classes/ Example

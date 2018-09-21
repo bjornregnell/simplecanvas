@@ -1,6 +1,6 @@
 object TestFxCanvas {
   import simplecanvas._
-  
+
   def main(args: Array[String]): Unit = {
     println("You should see two black windows with a white in line each.")
     println("The focus should be in the second window after startup.")

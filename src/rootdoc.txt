@@ -1,7 +1,0 @@
-This is the documentation of the `simplecanvas` Scala library for easy 2D game programming.
-
-== Package contents ==
-
-* [[introprog.FxCanvas `introprog.FxCanvas`]] for simple, pixel-based drawing.
-
-* [[introprog.Fx `introprog.Fx`]] a simple javafx wrapper.

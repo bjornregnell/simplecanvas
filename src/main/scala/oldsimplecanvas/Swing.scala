@@ -1,4 +1,4 @@
-package introprog
+package simplecanvas
 
 object Swing {
 

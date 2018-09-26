@@ -2,7 +2,7 @@ package simplecanvas
 
 object Swing {
 
-  /** Invert each RGB component of `c: java.awt.Color` by subraction from 255. */
+  /** Invert each RGB component of `c` by subtraction from 255. */
   def invertColor(c: java.awt.Color): java.awt.Color =
     new java.awt.Color(255 - c.getRed, 255 - c.getGreen, 255 - c.getBlue)
 
